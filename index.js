@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000
 
 app.use(cors())
@@ -30,6 +30,22 @@ async function run(){
         
         })
 
+        // get spcifiq data 
+        app.get('/categories/:id', async (req,res)=>{
+            const id = req.params.id;
+            const query = { _id : ObjectId(id)}
+            const categore = await productcategoriesCollection.findOne(query)
+            res.send(categore)
+        })
+
+
+
+        app.get('/allproducts/', async (req,res)=>{
+            const brand_name = req.query.category_name;
+            const query = {brand_name: brand_name}
+            const result = await allProductscollection.find(query).toArray()
+            res.send(result) 
+        })
 
 
         // post 
@@ -37,6 +53,12 @@ async function run(){
         app.post('/users', async(req,res)=>{
             const user = req.body;
             const result = await userscollection.insertOne(user)
+            res.send(result)
+        })
+
+        app.post('/allproducts', async (req,res)=>{
+            const products = req.body;
+            const result = await allProductscollection.insertOne(products)
             res.send(result)
         })
 
