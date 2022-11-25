@@ -23,6 +23,7 @@ async function run(){
         const allProductscollection = client.db("icmdb").collection("allProducts");
 
         // get  opareton
+        // get all categories data 
         app.get('/categories', async (req,res)=> {
             const query = {}
             const categoriyes = await productcategoriesCollection.find(query).toArray()
@@ -40,6 +41,7 @@ async function run(){
 
 
 
+        // get similar type of data
         app.get('/allproducts/', async (req,res)=>{
             const brand_name = req.query.category_name;
             const query = {brand_name: brand_name}
@@ -47,15 +49,25 @@ async function run(){
             res.send(result) 
         })
 
+        // get my product 
+        // jwt will be apply here 
+        app.get('/myproduct', async (req,res)=>{
+            const email = req.query.email;
+            const query = {userEmail: email}
+            const result = await allProductscollection.find(query).toArray()
+            res.send(result) 
+        })
+
 
         // post 
-
+        // sotre user info 
         app.post('/users', async(req,res)=>{
             const user = req.body;
             const result = await userscollection.insertOne(user)
             res.send(result)
         })
 
+        // store product in db , only seller can do it,jwt apply here 
         app.post('/allproducts', async (req,res)=>{
             const products = req.body;
             const result = await allProductscollection.insertOne(products)
