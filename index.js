@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000
 
 app.use(cors())
@@ -15,6 +16,23 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
 
+function verifyingToken(req, res, next) {
+
+    const header = req.headers.authorization;
+    if (!header) {
+        return res.status(401).send('sorry unauthrize access');
+    }
+    const token = header.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+
+}
+
 
 async function run(){
     try{
@@ -22,6 +40,19 @@ async function run(){
         const productcategoriesCollection = client.db("icmdb").collection("productcategories");
         const allProductscollection = client.db("icmdb").collection("allProducts");
         const bookedproductcollection = client.db("icmdb").collection("bookedproduct");
+
+
+        // A function for veryfy admin 
+         const adminVerify = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await userscollection.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next();
+        }
 
         // get  opareton
         // get all categories data 
@@ -40,14 +71,26 @@ async function run(){
             res.send(categore)
         })
 
-        // get all seller 
-        app.get('/seller', async (req,res)=>{
+        // get all seller -- jwt & admin route
+        app.get('/seller', verifyingToken, async (req,res)=>{
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
             const query = {role:'seller'}
             const seller = await userscollection.find(query).toArray()
             res.send(seller)
         })
+
+
         // get all seller 
-        app.get('/bayer', async (req,res)=>{
+        app.get('/bayer', verifyingToken, async (req,res)=>{
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
             const query = {role:'bayer'}
             const seller = await userscollection.find(query).toArray()
             res.send(seller)
@@ -56,7 +99,12 @@ async function run(){
 
 
         // get similar type of data
-        app.get('/allproducts/', async (req,res)=>{
+        app.get('/allproducts/', verifyingToken, async (req,res)=>{
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
             const brand_name = req.query.category_name;
             const query = {brand_name: brand_name}
             const result = await allProductscollection.find(query).toArray()
@@ -65,11 +113,36 @@ async function run(){
 
         // get my product 
         // jwt will be apply here 
-        app.get('/myproduct', async (req,res)=>{
+        app.get('/myproduct', verifyingToken, async (req,res)=>{
             const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
             const query = {userEmail: email}
             const result = await allProductscollection.find(query).toArray()
             res.send(result) 
+        })
+
+
+        // get jwt token for admin and seller 
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await userscollection.findOne(query);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+                return res.send({ jwtToken: token });
+            }
+            res.status(403).send({ jwtToken: 'sorry you have not permissiton for access' })
+        });
+
+        // get admin access
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await userscollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'admin' });
         })
 
 
