@@ -21,6 +21,7 @@ async function run(){
         const userscollection = client.db("icmdb").collection("users");
         const productcategoriesCollection = client.db("icmdb").collection("productcategories");
         const allProductscollection = client.db("icmdb").collection("allProducts");
+        const bookedproductcollection = client.db("icmdb").collection("bookedproduct");
 
         // get  opareton
         // get all categories data 
@@ -37,6 +38,19 @@ async function run(){
             const query = { _id : ObjectId(id)}
             const categore = await productcategoriesCollection.findOne(query)
             res.send(categore)
+        })
+
+        // get all seller 
+        app.get('/seller', async (req,res)=>{
+            const query = {role:'seller'}
+            const seller = await userscollection.find(query).toArray()
+            res.send(seller)
+        })
+        // get all seller 
+        app.get('/bayer', async (req,res)=>{
+            const query = {role:'bayer'}
+            const seller = await userscollection.find(query).toArray()
+            res.send(seller)
         })
 
 
