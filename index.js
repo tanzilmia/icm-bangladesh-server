@@ -83,6 +83,14 @@ async function run(){
             res.send(seller)
         })
 
+        // get campain data 
+        app.get('/campain', async (req,res)=>{
+            const query = {
+                campain: true,
+            }
+            const campaininfo = await allProductscollection.find(query).toArray()
+            res.send(campaininfo)
+        })
 
         // get all seller 
         app.get('/bayer', verifyingToken,  adminVerify, async (req,res)=>{
@@ -154,8 +162,12 @@ async function run(){
         })
 
         // get my booking 
-        app.get('/bookingproduct', async (req,res)=>{
+        app.get('/bookingproduct', verifyingToken, async (req,res)=>{
             const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
             const query = {email:email}
             const mybooking = await bookedproductcollection.find(query).toArray()
             res.send(mybooking)
@@ -195,28 +207,29 @@ async function run(){
         })
 
         // updata / put
+        // capmaining products
 
-        // app.put('/allproducts', verifyingToken, async(req,res)=>{
-        //     const email = req.query.email;
-        //     const decodedEmail = req.decoded.email;
-        //     if (email !== decodedEmail) {
-        //         return res.status(403).send({ message: 'forbidden access' });
-        //     }
-        //     const id = req.query.productId
-        //     const filter = { _id : ObjectId(id) };
-        //     const options = { upsert: true };
-        //     const updateDoc = {
-        //         $set: {
-        //           status: 'booked'
-        //         },
-        //       };
+        app.put('/campain', verifyingToken, async(req,res)=>{
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            const id = req.query.productId
+            const filter = { _id : ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                  campain: true
+                },
+              };
            
-        //       const result = await allProductscollection.updateOne(filter, updateDoc, options);
-        //       res.send(result)
-        // })
+              const result = await allProductscollection.updateOne(filter, updateDoc, options);
+              res.send(result)
+        })
 
         // delelte
-        // 
+        
     }
     finally{
 
