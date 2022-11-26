@@ -53,7 +53,7 @@ async function run(){
             }
             next();
         }
-
+        
         // get  opareton
         // get all categories data 
         app.get('/categories', async (req,res)=> {
@@ -72,7 +72,7 @@ async function run(){
         })
 
         // get all seller -- jwt & admin route
-        app.get('/seller', verifyingToken, async (req,res)=>{
+        app.get('/seller', verifyingToken, adminVerify, async (req,res)=>{
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
             if (email !== decodedEmail) {
@@ -85,7 +85,7 @@ async function run(){
 
 
         // get all seller 
-        app.get('/bayer', verifyingToken, async (req,res)=>{
+        app.get('/bayer', verifyingToken,  adminVerify, async (req,res)=>{
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
             if (email !== decodedEmail) {
@@ -145,6 +145,22 @@ async function run(){
             res.send({ isAdmin: user?.role === 'admin' });
         })
 
+        // get seller access
+        app.get('/users/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = await userscollection.findOne(query);
+            res.send({ isSeller: user?.role === 'seller' });
+        })
+
+        // get my booking 
+        app.get('/bookingproduct', async (req,res)=>{
+            const email = req.query.email;
+            const query = {email:email}
+            const mybooking = await bookedproductcollection.find(query).toArray()
+            res.send(mybooking)
+        })
+
 
         // post 
         // sotre user info 
@@ -155,13 +171,49 @@ async function run(){
         })
 
         // store product in db , only seller can do it,jwt apply here 
-        app.post('/allproducts', async (req,res)=>{
+        app.post('/allproducts', verifyingToken, async (req,res)=>{
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
             const products = req.body;
             const result = await allProductscollection.insertOne(products)
             res.send(result)
         })
 
+        // verifyingToken,
+        app.post('/bookingproduct', verifyingToken,  async (req,res)=>{
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            const bookedproduct = req.body;
+            const result = await bookedproductcollection.insertOne(bookedproduct)
+            res.send(result)
+        })
+
         // updata / put
+
+        // app.put('/allproducts', verifyingToken, async(req,res)=>{
+        //     const email = req.query.email;
+        //     const decodedEmail = req.decoded.email;
+        //     if (email !== decodedEmail) {
+        //         return res.status(403).send({ message: 'forbidden access' });
+        //     }
+        //     const id = req.query.productId
+        //     const filter = { _id : ObjectId(id) };
+        //     const options = { upsert: true };
+        //     const updateDoc = {
+        //         $set: {
+        //           status: 'booked'
+        //         },
+        //       };
+           
+        //       const result = await allProductscollection.updateOne(filter, updateDoc, options);
+        //       res.send(result)
+        // })
 
         // delelte
         // 
