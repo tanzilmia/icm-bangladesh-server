@@ -139,7 +139,7 @@ async function run(){
             const query = { email: email };
             const user = await userscollection.findOne(query);
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' })
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '8h' })
                 return res.send({ jwtToken: token });
             }
             res.status(403).send({ jwtToken: 'sorry you have not permissiton for access' })
@@ -174,6 +174,17 @@ async function run(){
         })
 
 
+        // get spacefiq user info
+
+        app.get('/user', async (req,res)=>{
+            const username = req.query.sellerName
+            const query = {name:username}
+            const result = await userscollection.findOne(query)
+            res.send(result)
+        })
+
+
+
         // post 
         // sotre user info 
         app.post('/users', async(req,res)=>{
@@ -181,6 +192,8 @@ async function run(){
             const result = await userscollection.insertOne(user)
             res.send(result)
         })
+
+
 
         // store product in db , only seller can do it,jwt apply here 
         app.post('/allproducts', verifyingToken, async (req,res)=>{
@@ -207,8 +220,31 @@ async function run(){
         })
 
         // updata / put
-        // capmaining products
 
+    //    verify batch for verified user,
+     
+        app.put('/users', verifyingToken, async (req,res)=>{
+
+            const email = req.query.email;
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            const id = req.query.userid
+            console.log(id);
+            const filter = { _id : ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                  verified: true
+                },
+              };
+           
+              const result = await userscollection.updateOne(filter, updateDoc, options);
+              res.send(result)
+        })
+
+        // capmaining products
         app.put('/campain', verifyingToken, async(req,res)=>{
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
@@ -216,6 +252,7 @@ async function run(){
                 return res.status(403).send({ message: 'forbidden access' });
             }
             const id = req.query.productId
+            console.log(id);
             const filter = { _id : ObjectId(id) };
             const options = { upsert: true };
             const updateDoc = {
@@ -227,6 +264,8 @@ async function run(){
               const result = await allProductscollection.updateOne(filter, updateDoc, options);
               res.send(result)
         })
+
+
 
         // delelte
         
