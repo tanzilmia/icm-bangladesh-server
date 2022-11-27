@@ -71,6 +71,14 @@ async function run(){
             res.send(categore)
         })
 
+        // gee booked product for bayeing 
+        app.get('/product/parces/:id', async (req,res)=>{
+            const id = req.params.id;
+            const query = { _id: ObjectId(id)}
+            const result = await bookedproductcollection.findOne(query)
+            res.send(result)
+        })
+
         // get all seller -- jwt & admin route
         app.get('/seller', verifyingToken, adminVerify, async (req,res)=>{
             const email = req.query.email;
