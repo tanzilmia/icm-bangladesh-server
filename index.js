@@ -291,10 +291,42 @@ async function run() {
       const updateDoc = {
         $set: {
           sold: true,
+          campain: false,
+
         },
       };
 
       const result = await allProductscollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
+    // store payment info
+    app.put("/addpaymentinbooked", verifyingToken, async (req, res) => {
+      const email = req.query.email;
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const sellerEmail = req.query.sellerEmail;
+      const productName = req.query.product_name;
+
+      const filter = {
+        sellerEmail:sellerEmail,
+        product_name:productName
+
+       };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          sold: true,
+        },
+      };
+
+      const result = await bookedproductcollection.updateOne(
         filter,
         updateDoc,
         options
@@ -340,3 +372,7 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
+
+
+
+
