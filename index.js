@@ -188,6 +188,17 @@ async function run() {
       res.send(mybooking);
     });
 
+    // get reported items :
+    app.get('/report', verifyingToken, adminVerify, async (req,res)=>{
+      const email = req.query.email;
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const query = { report : true }
+      const result = await allProductscollection.find(query).toArray()
+      res.send(result)
+    })
     // get spacefiq user info
 
     app.get("/user", async (req, res) => {
@@ -360,7 +371,41 @@ async function run() {
       res.send(result);
     });
 
+    // report a  products
+    app.put("/report", verifyingToken, async (req, res) => {
+      const email = req.query.email;
+      const decodedEmail = req.decoded.email;
+      if (email !== decodedEmail) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const id = req.query.id;
+      console.log(id);
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          report: true
+        },
+      };
+
+      const result = await allProductscollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
+
     // delelte
+
+    app.delete('/deleteuser', async (req,res)=>{
+      const id = req.query.id
+      const query = { _id: ObjectId(id)}
+      const result = await userscollection.deleteOne(query)
+      res.send(result)
+    })
+
+
   } finally {
   }
 }
